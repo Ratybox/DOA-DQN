@@ -1,0 +1,47 @@
+{
+  "timestamp": "20251210_231056",
+  "env": "CartPole-v1",
+  "best_hyperparams": {
+    "learning_rate": 0.0006173770394704572,
+    "gamma": 0.9441374425325055,
+    "epsilon_start": 0.5499874579090014,
+    "epsilon_end": 0.05133240027692805,
+    "epsilon_decay_steps": 21562,
+    "batch_size": 32,
+    "replay_buffer_size": 44759,
+    "target_update_freq": 124,
+    "hidden_size": 256,
+    "n_layers": 4,
+    "adam_beta1": 0.8001479655097927,
+    "adam_beta2": 0.9991219347731927,
+    "adam_epsilon": 2.9507066707905306e-06
+  },
+  "best_reward": -Infinity,
+  "optimization_history": [],
+  "sota_results": {
+    "Rainbow DQN (SOTA)": {
+      "mean_reward": 500.0,
+      "std_reward": 0.0,
+      "expected_reward": 500.0,
+      "expected_std": 0.0,
+      "algorithm": "Rainbow-DQN",
+      "reference": "https://docs.agilerl.com/en/latest/tutorials/gymnasium/agilerl_rainbow_dqn_tutorial.html",
+      "note": "Theoretical SOTA (requires 200k steps and multiple improvements)"
+    }
+  },
+  "doa_info": {
+    "n_evals": 20,
+    "history_best": [
+      Infinity,
+      Infinity,
+      Infinity,
+      Infinity
+    ],
+    "history_mean": [
+      Infinity,
+      Infinity,
+      Infinity,
+      Infinity
+    ]
+  }
+}
