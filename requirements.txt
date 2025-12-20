@@ -1,0 +1,20 @@
+# DOA-DQN Hyperparameter Optimization for CartPole-v1
+# Requirements file for the project
+
+# Core scientific computing
+numpy>=1.21.0,<2.0.0
+
+# Deep Learning
+torch>=1.12.0,<3.0.0
+
+# Reinforcement Learning
+# Note: gymnasium is the maintained replacement for gym
+gymnasium>=0.28.0,<1.0.0
+
+# Data manipulation and analysis
+pandas>=1.3.0,<3.0.0
+
+# Visualization
+matplotlib>=3.5.0,<4.0.0
+seaborn>=0.11.0,<1.0.0
+

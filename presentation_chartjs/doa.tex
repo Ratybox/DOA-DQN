@@ -1,0 +1,303 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+% ============================================================================
+% THEME AND PROFESSIONAL COLORS
+% ============================================================================
+
+\usetheme{Darmstadt}
+\usecolortheme{default}
+
+% Color definitions
+\definecolor{mainblue}{RGB}{50,50,120}
+\definecolor{lightblue}{RGB}{240,245,255}
+\definecolor{mediumblue}{RGB}{200,210,240}
+\definecolor{darkblueviolet}{RGB}{40,40,100}
+\definecolor{accentviolet}{RGB}{80,60,140}
+\definecolor{darkgreen}{RGB}{0,100,50}
+\definecolor{darkred}{RGB}{180,0,0}
+\definecolor{darkblue}{RGB}{0,51,102}
+
+% Color configuration
+\setbeamercolor{structure}{fg=mainblue}
+\setbeamercolor{normal text}{fg=black!90}
+\setbeamercolor{frametitle}{bg=mainblue,fg=white}
+\setbeamercolor{block title}{bg=mediumblue,fg=black!90}
+\setbeamercolor{block body}{bg=lightblue,fg=black!85}
+\setbeamercolor{block title alerted}{bg=red!20,fg=black!90}
+\setbeamercolor{block body alerted}{bg=red!10,fg=black!85}
+
+\usefonttheme{structurebold}
+\setbeamercovered{invisible}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+% Custom frame template to prevent overflows
+\setbeamertemplate{frametitle}{%
+	\nointerlineskip%
+	\tikz[overlay,remember picture] {%
+		\fill[mainblue] (current page.north west) rectangle ([yshift=-4.125ex]current page.north east);
+	}%
+	\begin{beamercolorbox}[wd=\paperwidth,ht=2.75ex,dp=1.375ex,leftskip=0.3cm,rightskip=0.3cm,sep=0pt]{frametitle}%
+		\usebeamerfont{frametitle}%
+		\color{white}%
+		\vbox{}\vskip-2ex%
+		\strut\insertframetitle\strut%
+		\vskip-0.5ex%
+	\end{beamercolorbox}%
+	\vskip0.3em%
+}
+
+% Ensure frametitle has correct background color (after template definition)
+\setbeamercolor{frametitle}{bg=mainblue,fg=white}
+
+% ============================================================================
+% PACKAGES
+% ============================================================================
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+
+\usepackage{algorithmic}
+\usepackage[ruled,vlined]{algorithm2e}
+
+% Mathematics
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{xcolor}
+
+% Graphics
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\usepackage{adjustbox}
+
+% Algorithms
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+
+% Symbols
+\usepackage{pifont}
+
+% Links
+\usepackage{hyperref}
+
+% ============================================================================
+% LISTINGS CONFIGURATION
+% ============================================================================
+
+\lstset{
+	basicstyle=\ttfamily\small,
+	breaklines=true,
+	keywordstyle=\color{darkblue}\bfseries,
+	commentstyle=\color{gray},
+	stringstyle=\color{darkred},
+	showstringspaces=false,
+	language=Python,
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	frame=single,
+	framexleftmargin=12pt,
+	xleftmargin=12pt,
+	aboveskip=5pt,
+	belowskip=5pt
+}
+
+% ============================================================================
+% TITLE
+% ============================================================================
+
+\title[DOA-DQN]{Application of DOA Algorithm to DQN Optimization}
+\subtitle{Hyperparameter Optimization for Deep Q-Networks using Dream Optimization Algorithm}
+\author{Radhi Badache}
+\institute{Research Project -- Statistics for Data Science}
+\date{\today}
+
+\begin{document}
+	
+	% ============================================================================
+	% TITLE PAGE
+	% ============================================================================
+	
+	\begin{frame}[plain]
+		\setbeamercolor{background canvas}{bg=mainblue}
+		\titlepage
+	\end{frame}
+	
+	% ============================================================================
+	% TABLE OF CONTENTS
+	% ============================================================================
+	
+	\begin{frame}{Table of Contents}
+		\tableofcontents
+	\end{frame}
+	
+	
+	
+	% ============================================================================
+	% SECTION 2: OPTIMIZER FAMILIES
+	% ============================================================================
+	
+	\section{Two Families of Optimizers}
+	
+	\begin{frame}[plain]
+		\setbeamercolor{background canvas}{bg=mainblue}
+		\centering
+		\vspace{2.5cm}
+		{\Huge\textcolor{bg=mainblue}{\textbf{Optimizer Families \\}}}
+		\vspace{0.8cm}
+		{\Large\textcolor{bg=mainblue}{HPO vs Parameter Optimizers}}
+		\normalsize
+	\end{frame}
+	
+	\begin{frame}{Hyperparameter vs Parameters}
+		\begin{columns}[T]
+			\column{0.48\textwidth}
+			\begin{block}{Parameter Optimization}
+				\footnotesize
+				\begin{itemize}
+					\item \textbf{Goal:} Find $\theta^*$ minimizing loss
+					\item \textbf{Methods:} Adam, SGD, RMSprop
+					\item \textbf{Context:} Training inner loop
+				\end{itemize}
+			\end{block}
+			
+			\column{0.48\textwidth}
+			\begin{block}{Hyperparameter Optimization}
+				\footnotesize
+				\begin{itemize}
+					\item \textbf{Goal:} Find $\lambda^*$ maximizing performance
+					\item \textbf{Methods:} Bayesian, TPE, Population-based
+					\item \textbf{Context:} Project-level tuning
+				\end{itemize}
+			\end{block}
+		\end{columns}
+	\end{frame}
+	
+	\begin{frame}{Hyperparameters to Optimize}
+		\begin{columns}[T]
+			\column{0.48\textwidth}
+			\begin{block}{DQN Training Parameters}
+				\footnotesize
+				\begin{itemize}
+					\item \textbf{learning\_rate} (float)
+					\item \textbf{gamma} (float): discount factor
+					\item \textbf{epsilon\_start} (float)
+					\item \textbf{epsilon\_end} (float)
+					\item \textbf{epsilon\_decay\_steps} (int)
+					\item \textbf{batch\_size} (int)
+					\item \textbf{replay\_buffer\_size} (int)
+				\end{itemize}
+			\end{block}
+			
+			\column{0.48\textwidth}
+			\begin{block}{Network \& Optimizer}
+				\footnotesize
+				\begin{itemize}
+					\item \textbf{target\_update\_freq} (int)
+					\item \textbf{hidden\_size} (int)
+					\item \textbf{n\_layers} (int)
+					\item \textbf{adam\_beta1} (float)
+					\item \textbf{adam\_beta2} (float)
+					\item \textbf{adam\_epsilon} (float)
+				\end{itemize}
+			\end{block}
+		\end{columns}
+		
+		\vspace{0.3cm}
+		
+		\begin{block}{Total: 13 Hyperparameters}
+			\footnotesize
+			DOA algorithm optimizes all these hyperparameters simultaneously to maximize DQN performance on Atari games.
+		\end{block}
+	\end{frame}
+
+	\begin{frame}{DOA Algorithm Flow}
+
+	\begin{center}
+		\begin{tikzpicture}[
+			node distance = 1.2cm,
+			auto,
+			thick,
+			block/.style={rectangle, draw=mainblue, fill=lightblue, text width=2.2cm, text centered, rounded corners, minimum height=0.7cm, font=\footnotesize},
+			decision/.style={diamond, draw=mainblue, fill=mediumblue, text width=1.5cm, text centered, minimum height=0.8cm, font=\footnotesize},
+			arrow/.style={->, >=stealth, mainblue, thick}
+			]
+			% Start
+			\node [block] (init) {Initialize};
+			
+			% Evaluate
+			\node [block, below of=init] (eval) {Evaluate};
+			
+			% Decision: exploration or exploitation
+			\node [decision, below of=eval, yshift=-0.2cm] (decision) {$t < T_d$?};
+			
+			% Exploration branch
+			\node [block, below left of=decision, xshift=-1.2cm, yshift=-0.4cm, text width=1.8cm] (explore) {Exploration\\5 Groups};
+			
+			% Exploitation branch
+			\node [block, below right of=decision, xshift=1.2cm, yshift=-0.4cm, text width=1.8cm] (exploit) {Exploitation\\Global Best};
+			
+			% Merge
+			\node [block, below of=decision, yshift=-2cm, text width=2.2cm] (update) {Update\\Elitism};
+			
+			% Loop back
+			\node [block, left of=eval, xshift=-3cm] (loop) {Iterate};
+			
+			% End
+			\node [block, right of=update, xshift=3cm] (end) {Best Solution};
+			
+			% Arrows
+			\draw [arrow] (init) -- (eval);
+			\draw [arrow] (eval) -- (decision);
+			\draw [arrow] (decision) -- node[left, font=\tiny] {Yes} (explore);
+			\draw [arrow] (decision) -- node[right, font=\tiny] {No} (exploit);
+			\draw [arrow] (explore) |- (update);
+			\draw [arrow] (exploit) |- (update);
+			\draw [arrow] (update) -| node[below, font=\tiny, yshift=-0.2cm] {$t < T_{\max}$} (loop);
+			\draw [arrow] (loop) -- (eval);
+			\draw [arrow] (update) -| node[above, font=\tiny, yshift=0.2cm] {$t = T_{\max}$} (end);
+		\end{tikzpicture}
+	\end{center}
+	
+	\vspace{0.1cm}
+	
+	\begin{block}{Key Phases}
+		\footnotesize
+		\textbf{Exploration} ($t < 0.9 \times T_{\max}$): 5 groups with memory, forgetting, and dream-sharing. \textbf{Exploitation} ($t \geq 0.9 \times T_{\max}$): Refinement around global best.
+	\end{block}
+\end{frame}
+
+
+% ============================================================================
+% REFERENCES
+% ============================================================================
+
+\section{References}
+
+\begin{frame}[fragile,allowframebreaks]{\small References}
+	\begin{thebibliography}{99}
+		
+		\bibitem{Lang2025} Lang, Y., Gao, Y. (2025). Dream Optimization Algorithm (DOA): A novel metaheuristic optimization algorithm. \textit{Computer Methods in Applied Mechanics and Engineering}, 436, 117718.
+		
+		\bibitem{Mnih2013} Mnih, V., Kavukcuoglu, K., Silver, D. (2013). Playing Atari with Deep Reinforcement Learning. \textit{arXiv preprint arXiv:1312.5602}.
+		
+		\bibitem{Mnih2015} Mnih, V., Kavukcuoglu, K., Silver, D., et al. (2015). Human-level control through deep reinforcement learning. \textit{Nature}, 529(7587), 529-533.
+		
+		\bibitem{Watkins1992} Watkins, C. J. C. H., Dayan, P. (1992). Q-learning. \textit{Machine Learning}, 8(3), 279-292.
+		
+		\bibitem{Kennedy1995} Kennedy, J., Eberhart, R. (1995). Particle swarm optimization. \textit{Proceedings of ICNN'95}, 4, 1942-1948.
+		
+		\bibitem{Mirjalili2014} Mirjalili, S., Mirjalili, S. M., Lewis, A. (2014). Grey Wolf Optimizer. \textit{Advances in Engineering Software}, 69, 46-61.
+		
+		\bibitem{Mirjalili2016} Mirjalili, S., Lewis, A. (2016). The Whale Optimization Algorithm. \textit{Advances in Engineering Software}, 95, 51-67.
+		
+		\bibitem{Bergstra2011} Bergstra, J., Bengio, Y. (2011). Hyperparameter Optimization with Approximate Gradient. \textit{ICML}, 24, 265-273.
+		
+		\bibitem{Sutton1998} Sutton, R. S., Barto, A. G. (1998). \textit{Reinforcement Learning: An Introduction}. MIT Press.
+		
+	\end{thebibliography}
+\end{frame}
+
+\end{document}
