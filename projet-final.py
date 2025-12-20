@@ -1,21 +1,3 @@
-"""
-DOA-DQN Hyperparameter Optimization for CartPole-v1
-=====================================================
-Dream Optimization Algorithm applied to Deep Q-Network hyperparameter tuning
-Environment: CartPole-v1 (OpenAI Gym)
-
-SOTA Baselines for CartPole-v1:
-- Classical DQN: 459 reward (Custode & Iacca, 2020)
-- DQN with optimizations: 500 reward (max possible)
-- Training time: ~100-300 episodes to convergence
-
-References:
-[1] Custode & Iacca (2020): Learned Heuristic A* Search in Tetris
-[2] Hubbs et al. (2020): Decision Models
-[3] AutoDO Paper (2024): Automated Decision Optimization
-[4] DQN with PER (2020): Balancing CartPole Tutorial
-"""
-
 import numpy as np
 import gymnasium as gym  # gymnasium is the maintained replacement for gym
 import torch
@@ -984,6 +966,31 @@ print("✓ SOTABaselines class defined")
 # ============================================================================
 
 if __name__ == "__main__":
+    import sys
+    import argparse
+    
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description='DOA-DQN Optimization or Visualization',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run full optimization
+  python projet-final.py
+  
+  # Load existing results and create visualizations only
+  python projet-final.py --load-results doa_dqn_results/doa_dqn_results_20251220_071119.json
+  
+  # Load results, retrain with best hyperparameters, then visualize
+  python projet-final.py --load-results doa_dqn_results/doa_dqn_results_20251220_071119.json --retrain-best
+        """
+    )
+    parser.add_argument('--load-results', type=str, default=None,
+                       help='Path to JSON file with existing results (skips optimization, only visualization)')
+    parser.add_argument('--retrain-best', action='store_true',
+                       help='Retrain with best hyperparameters after loading results')
+    args = parser.parse_args()
+    
     # Auto-detect CUDA availability
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
@@ -997,44 +1004,104 @@ if __name__ == "__main__":
     # Print SOTA baselines
     SOTABaselines.print_all_baselines()
     
-    # Configuration - SOTA-competitive settings
-    # Based on SOTA references from literature:
-    # - CleanRL DQN: 100k+ timesteps for proper training
-    # - Stable-Baselines3: 100k timesteps standard
-    # - PPO: ~80 episodes with proper training
-    # - DQN Classical: ~150 episodes to solve (Custode & Iacca, 2020)
-    # - DQN + PER: ~120 episodes to solve
-    # 
-    # Total evaluations: 15 pop_size * 5 iterations = 75 hyperparameter evaluations
-    # Each evaluation: 100k training steps + 20 eval episodes
-    # Total training steps: 75 * 100k = 7,500,000 steps
-    CONFIG = {
-        'env_name': 'CartPole-v1',
-        'doa_pop_size': 15,         # Population size for exploration
-        'doa_iterations': 5,         # Number of DOA iterations
-        'dqn_train_steps': 100000,  # SOTA-level: 100k steps per evaluation (CleanRL/Stable-Baselines3 standard)
-        'dqn_eval_episodes': 20,    # SOTA-level: more episodes for robust evaluation
-        'device': device,
-        'output_dir': './doa_dqn_results',
-        'verbose': True,
-    }
-    
-    print("\nConfiguration (SOTA-competitive settings):")
-    print("="*70)
-    for key, value in CONFIG.items():
-        print(f" {key:25s}: {value}")
-    print(f"\n Total DOA evaluations: {CONFIG['doa_pop_size'] * CONFIG['doa_iterations']}")
-    print(f" Total training steps per evaluation: {CONFIG['dqn_train_steps']:,}")
-    print(f" Total training steps (all evaluations): {CONFIG['doa_pop_size'] * CONFIG['doa_iterations'] * CONFIG['dqn_train_steps']:,}")
-    print("="*70)
-    
-    # Initialize optimizer
-    optimizer = DOADQNOptimizer(**CONFIG)
-    
-    # Run optimization
-    best_hp, best_reward, doa_info = optimizer.optimize()
-    
-    print(f"\n[SUCCESS] Best DOA-DQN reward: {best_reward:.2f}")
+    # Check if we should load existing results
+    if args.load_results:
+        # Load existing results from JSON file
+        results_file = Path(args.load_results)
+        if not results_file.exists():
+            print(f"[ERROR] Results file not found: {results_file}")
+            sys.exit(1)
+        
+        print(f"\n[INFO] Loading existing results from: {results_file}")
+        print("="*70)
+        
+        with open(results_file, 'r') as f:
+            loaded_results = json.load(f)
+        
+        # Extract data
+        best_hp = loaded_results['best_hyperparams']
+        best_reward = loaded_results['best_reward']
+        doa_info = {
+            'history_best': np.array(loaded_results['doa_info']['history_best']),
+            'history_mean': np.array(loaded_results['doa_info']['history_mean']),
+            'n_evals': loaded_results['doa_info']['n_evals']
+        }
+        
+        # Create a mock optimizer object for visualization
+        class MockOptimizer:
+            def __init__(self, optimization_history):
+                self.optimization_history = optimization_history
+        
+        optimizer = MockOptimizer(loaded_results['optimization_history'])
+        
+        # Extract CONFIG from loaded results if available, otherwise use defaults
+        CONFIG = {
+            'env_name': loaded_results.get('env', 'CartPole-v1'),
+            'doa_pop_size': 15,  # Default, can be inferred from n_evals if needed
+            'doa_iterations': 5,
+            'dqn_train_steps': 100000,
+            'dqn_eval_episodes': 20,
+            'device': device,
+            'output_dir': './doa_dqn_results',
+            'verbose': True,
+        }
+        
+        print(f"[SUCCESS] Loaded results:")
+        print(f"  Best Reward: {best_reward:.2f}")
+        print(f"  Total Evaluations: {doa_info['n_evals']}")
+        print(f"  Timestamp: {loaded_results.get('timestamp', 'N/A')}")
+        print("="*70)
+        print("\n[INFO] Skipping optimization, proceeding to visualization...")
+        
+        # Optionally retrain with best hyperparameters
+        if args.retrain_best:
+            print("\n[INFO] Retraining with best hyperparameters...")
+            env = gym.make(CONFIG['env_name'])
+            agent = DQNAgent(env, best_hp, device=device, seed=42)
+            agent.train(CONFIG['dqn_train_steps'], log_interval=CONFIG['dqn_train_steps'] // 5)
+            final_reward = agent.evaluate(CONFIG['dqn_eval_episodes'])
+            print(f"[SUCCESS] Final evaluation reward: {final_reward:.2f}")
+            env.close()
+    else:
+        # Normal optimization mode
+        # Configuration - SOTA-competitive settings
+        # Based on SOTA references from literature:
+        # - CleanRL DQN: 100k+ timesteps for proper training
+        # - Stable-Baselines3: 100k timesteps standard
+        # - PPO: ~80 episodes with proper training
+        # - DQN Classical: ~150 episodes to solve (Custode & Iacca, 2020)
+        # - DQN + PER: ~120 episodes to solve
+        # 
+        # Total evaluations: 15 pop_size * 5 iterations = 75 hyperparameter evaluations
+        # Each evaluation: 100k training steps + 20 eval episodes
+        # Total training steps: 75 * 100k = 7,500,000 steps
+        CONFIG = {
+            'env_name': 'CartPole-v1',
+            'doa_pop_size': 15,         # Population size for exploration
+            'doa_iterations': 5,         # Number of DOA iterations
+            'dqn_train_steps': 100000,  # SOTA-level: 100k steps per evaluation (CleanRL/Stable-Baselines3 standard)
+            'dqn_eval_episodes': 20,    # SOTA-level: more episodes for robust evaluation
+            'device': device,
+            'output_dir': './doa_dqn_results',
+            'verbose': True,
+        }
+        
+        print("\nConfiguration (SOTA-competitive settings):")
+        print("="*70)
+        for key, value in CONFIG.items():
+            print(f" {key:25s}: {value}")
+        print(f"\n Total DOA evaluations: {CONFIG['doa_pop_size'] * CONFIG['doa_iterations']}")
+        print(f" Total training steps per evaluation: {CONFIG['dqn_train_steps']:,}")
+        print(f" Total training steps (all evaluations): {CONFIG['doa_pop_size'] * CONFIG['doa_iterations'] * CONFIG['dqn_train_steps']:,}")
+        print("="*70)
+        
+        # Initialize optimizer
+        optimizer = DOADQNOptimizer(**CONFIG)
+        
+        # Run optimization
+        best_hp, best_reward, doa_info = optimizer.optimize()
+        
+        print(f"\n[SUCCESS] Best DOA-DQN reward: {best_reward:.2f}")
     
     # ========================================================================
     # VISUALIZATION AND COMPARISON
@@ -1122,12 +1189,17 @@ if __name__ == "__main__":
     
     # Plot hyperparameter distributions (only if we have data)
     if len(hp_data) > 0 and len(df) > 0:
-        fig, axes = plt.subplots(3, 4, figsize=(18, 12))
+        hp_names = HyperparameterCodec.HP_NAMES
+        n_hp = len(hp_names)
+        # Calculate grid size: need enough axes for all hyperparameters
+        n_cols = 4
+        n_rows = (n_hp + n_cols - 1) // n_cols  # Ceiling division
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(18, 4.5 * n_rows))
         axes = axes.flatten()
         
-        hp_names = HyperparameterCodec.HP_NAMES
-        
         for i, hp_name in enumerate(hp_names):
+            if i >= len(axes):
+                break  # Safety check
             ax = axes[i]
             if hp_name in df.columns:
                 values = df[hp_name].values
@@ -1143,6 +1215,13 @@ if __name__ == "__main__":
                 ax.grid(True, alpha=0.3)
                 ax.legend(fontsize=9)
                 plt.colorbar(scatter, ax=ax)
+            else:
+                # Hide axes for hyperparameters not in dataframe
+                ax.axis('off')
+        
+        # Hide unused axes
+        for i in range(len(hp_names), len(axes)):
+            axes[i].axis('off')
         
         plt.tight_layout()
         plt.savefig(viz_dir / 'v6_hyperparameter_analysis.png', dpi=300, bbox_inches='tight')
@@ -1327,16 +1406,23 @@ if __name__ == "__main__":
         # 4. Efficiency Frontier: Reward vs Episodes to Solve
         fig, ax = plt.subplots(figsize=(14, 10))
         
+        # Track categories already added to legend
+        categories_added = set()
+        color_map = {'Policy Gradient': 'blue', 'Value-Based': 'green', 'Interpretable': 'purple'}
+        
         # Plot SOTA methods
         for name, baseline in SOTABaselines.BASELINES.items():
             if baseline['mean_reward'] is not None and baseline['episodes_to_solve'] is not None:
                 mean_r = baseline['mean_reward']
                 episodes = baseline['episodes_to_solve']
                 category = baseline.get('category', 'Unknown')
-                color_map = {'Policy Gradient': 'blue', 'Value-Based': 'green', 'Interpretable': 'purple'}
                 color = color_map.get(category, 'gray')
+                # Only add label if category not already in legend
+                label = category if category not in categories_added else ''
+                if category not in categories_added:
+                    categories_added.add(category)
                 ax.scatter(episodes, mean_r, s=200, alpha=0.7, color=color, 
-                          edgecolors='black', linewidth=2, label=category if category not in [l.get_label() for l in ax.get_legend().get_lines()] else '')
+                          edgecolors='black', linewidth=2, label=label)
                 ax.annotate(name.replace('_', ' '), (episodes, mean_r), 
                            fontsize=8, ha='center', va='bottom')
         
