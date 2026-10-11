@@ -1,5 +1,10 @@
 # DOA-DQN: Dream Optimization Algorithm for Deep Q-Network Hyperparameter Tuning
 
+## Paper & Slides
+
+- [**Paper**](DOA-DQN-paper.pdf): *Hyperparameter Optimization of Deep Q-Network Using Dream Optimization Algorithm: A Novel Metaheuristic Approach for Reinforcement Learning*, Radhi Badache.
+- [**Slides**](DOA-DQN-slides.pdf): *Application of DOA Algorithm to DQN Optimization*, research project presentation (Statistics for Data Science), December 14, 2025.
+
 This repository contains the research code for applying the **Dream Optimization Algorithm (DOA)** to the **hyperparameter optimization of Deep Q-Networks (DQN)** trained with the Adam optimizer.[web:53][web:57]  
 The goal is to study how a recent metaheuristic inspired by human dreams can automatically tune both RL and optimizer hyperparameters, and to compare it against standard baselines on control benchmarks.[web:27][web:60]
 
